@@ -6,6 +6,11 @@ const routes = [
         name: 'Home',
         component: () => import('@/pages/GridPage.vue'),
     },
+    {
+        path: '/start',
+        name: 'Start',
+        component: () => import('@/pages/StartPage.vue'),
+    },
 ]
 
 const router = createRouter({
