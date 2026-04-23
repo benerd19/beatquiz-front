@@ -1,135 +1,73 @@
 <script setup>
 import { reactive, onMounted } from 'vue'
+import Modal from '@/components/Modal.vue'
 const teams = reactive([])
+const game = reactive([])
 
 onMounted(() => {
     const storageTeams = localStorage.getItem('teams')
     if (storageTeams) teams.push(...JSON.parse(storageTeams))
-    console.log(teams)
+
+    const storageGame = localStorage.getItem('game')
+    const parsedRounds = JSON.parse(storageGame).rounds
+
+    console.log(parsedRounds)
+
+    game.push(...parsedRounds)
 })
+
+const backgroundColors = reactive([
+    {
+        title: '#5A5826',
+        round: '#3A3927',
+    },
+    {
+        title: '#2F5E28',
+        round: '#293A27',
+    },
+    {
+        title: '#603252',
+        round: '#3A2734',
+    },
+    {
+        title: '#2B6165',
+        round: '#27393A',
+    },
+    {
+        title: '#5A5826',
+        round: '#3A3927',
+    },
+    {
+        title: '#623334',
+        round: '#3A2727',
+    },
+    {
+        title: '#2F5E28',
+        round: '#293A27',
+    },
+    {
+        title: '#453876',
+        round: '#2B273A',
+    },
+])
 </script>
 <template>
     <div class="grid__inner">
         <h1 class="grid__header">Name of the game</h1>
         <div class="grid">
-            <div class="grid__row">
-                <div class="grid__category-title">
-                    <h2>Topic 1123123123123123</h2>
+            <div class="grid__row" v-for="(round, index) in game" :key="index">
+                <div class="grid__category-title" :style="{ backgroundColor: backgroundColors[index].title }">
+                    <h2>{{ round.title }}</h2>
                 </div>
                 <div class="grid__rounds">
-                    <div class="grid__round grid__round--disable">100</div>
-                    <div class="grid__round">200</div>
-                    <div class="grid__round">300</div>
-                    <div class="grid__round">400</div>
-                    <div class="grid__round">500</div>
-                    <div class="grid__round">600</div>
-                    <div class="grid__round">700</div>
-                    <div class="grid__round">800</div>
-                </div>
-            </div>
-            <div class="grid__row">
-                <div class="grid__category-title">
-                    <h2>Topic 1123123123123123</h2>
-                </div>
-                <div class="grid__rounds">
-                    <div class="grid__round">100</div>
-                    <div class="grid__round">200</div>
-                    <div class="grid__round">300</div>
-                    <div class="grid__round">400</div>
-                    <div class="grid__round">500</div>
-                    <div class="grid__round">600</div>
-                    <div class="grid__round">700</div>
-                    <div class="grid__round">800</div>
-                </div>
-            </div>
-            <div class="grid__row">
-                <div class="grid__category-title">
-                    <h2>Topic 1123123123123123</h2>
-                </div>
-                <div class="grid__rounds">
-                    <div class="grid__round">100</div>
-                    <div class="grid__round">200</div>
-                    <div class="grid__round">300</div>
-                    <div class="grid__round">400</div>
-                    <div class="grid__round">500</div>
-                    <div class="grid__round">600</div>
-                    <div class="grid__round">700</div>
-                    <div class="grid__round">800</div>
-                </div>
-            </div>
-            <div class="grid__row">
-                <div class="grid__category-title">
-                    <h2>Topic 1123123123123123</h2>
-                </div>
-                <div class="grid__rounds">
-                    <div class="grid__round">100</div>
-                    <div class="grid__round">200</div>
-                    <div class="grid__round">300</div>
-                    <div class="grid__round">400</div>
-                    <div class="grid__round">500</div>
-                    <div class="grid__round">600</div>
-                    <div class="grid__round">700</div>
-                    <div class="grid__round">800</div>
-                </div>
-            </div>
-            <div class="grid__row">
-                <div class="grid__category-title">
-                    <h2>Topic 1123123123123123</h2>
-                </div>
-                <div class="grid__rounds">
-                    <div class="grid__round">100</div>
-                    <div class="grid__round">200</div>
-                    <div class="grid__round">300</div>
-                    <div class="grid__round">400</div>
-                    <div class="grid__round">500</div>
-                    <div class="grid__round">600</div>
-                    <div class="grid__round">700</div>
-                    <div class="grid__round">800</div>
-                </div>
-            </div>
-            <div class="grid__row">
-                <div class="grid__category-title">
-                    <h2>Topic 1123123123123123</h2>
-                </div>
-                <div class="grid__rounds">
-                    <div class="grid__round">100</div>
-                    <div class="grid__round">200</div>
-                    <div class="grid__round">300</div>
-                    <div class="grid__round">400</div>
-                    <div class="grid__round">500</div>
-                    <div class="grid__round">600</div>
-                    <div class="grid__round">700</div>
-                    <div class="grid__round">800</div>
-                </div>
-            </div>
-            <div class="grid__row">
-                <div class="grid__category-title">
-                    <h2>Topic 1123123123123123</h2>
-                </div>
-                <div class="grid__rounds">
-                    <div class="grid__round">100</div>
-                    <div class="grid__round">200</div>
-                    <div class="grid__round">300</div>
-                    <div class="grid__round">400</div>
-                    <div class="grid__round">500</div>
-                    <div class="grid__round">600</div>
-                    <div class="grid__round">700</div>
-                    <div class="grid__round">800</div>
-                </div>
-            </div>
-            <div class="grid__row">
-                <div class="grid__category-title">
-                    <h2>Topic 1123123123123123</h2>
-                </div>
-                <div class="grid__rounds">
-                    <div class="grid__round">100</div>
-                    <div class="grid__round">200</div>
-                    <div class="grid__round">300</div>
-                    <div class="grid__round">400</div>
-                    <div class="grid__round">500</div>
-                    <div class="grid__round">600</div>
-                    <div class="grid__round">700</div>
-                    <div class="grid__round">800</div>
+                    <div
+                        class="grid__round"
+                        v-for="(question, idx) in round.questions"
+                        :key="idx"
+                        :style="{ backgroundColor: backgroundColors[index].round }"
+                    >
+                        {{ question.value }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -143,6 +81,7 @@ onMounted(() => {
             </div>
         </div>
     </div>
+    <Modal />
 </template>
 <style scoped lang="scss">
 .grid {
@@ -152,17 +91,18 @@ onMounted(() => {
     max-height: 80dvh;
 
     &__inner {
-        padding: 16px 16px 0;
+        padding: 0 16px;
         max-width: 1440px;
         width: 100%;
     }
 
     &__header {
+        margin-top: 16px;
         text-align: center;
         font-size: 40px;
         font-weight: 600;
         color: #ffffff;
-        margin-bottom: 24px;
+        margin-bottom: 8px;
     }
 
     &__row {
@@ -172,18 +112,20 @@ onMounted(() => {
 
     &__category-title {
         max-width: 240px;
+        width: 100%;
         font-size: 24px;
         color: #ffffff;
         border-radius: 20px;
         background-color: #2c2e30;
-        // height: 90px;
         display: flex;
+        height: 90px;
         justify-content: center;
         align-items: center;
         padding: 12px 8px;
         flex-wrap: wrap;
         text-align: center;
         user-select: none;
+        height: calc((80dvh - 56px) / 8);
     }
 
     &__rounds {
@@ -197,7 +139,7 @@ onMounted(() => {
         width: 100%;
         background-color: #2c2e30;
         border: 1px solid transparent;
-        color: #fff;
+        color: rgba(255, 255, 255, 0.87);
         font-size: 40px;
         font-weight: 400;
         display: flex;
@@ -207,6 +149,8 @@ onMounted(() => {
         cursor: pointer;
         transition: all 0.3s ease;
         user-select: none;
+        height: calc((80dvh - 56px) / 8);
+        font-family: 'Dela Gothic One';
 
         &:hover {
             border: 1px solid #ffffff;
@@ -240,16 +184,18 @@ onMounted(() => {
         flex-direction: column;
         gap: 4px;
         border-radius: 20px;
+        height: 90px;
     }
 
     &__command-title {
-        font-size: 24px;
+        font-size: 16px;
         color: #ffffff;
     }
 
     &__command-points {
-        font-size: 40px;
-        color: #ffffff;
+        font-size: 24px;
+        font-family: 'Dela Gothic One';
+        color: rgba(255, 255, 255, 0.87);
     }
 
     &__logo-wrapper {

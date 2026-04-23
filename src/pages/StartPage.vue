@@ -3,6 +3,7 @@ import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDropZone } from '@vueuse/core'
 import { useTemplateRef } from 'vue'
+import Modal from '@/components/Modal.vue'
 
 const dropZoneRef = useTemplateRef('dropZoneRef')
 const router = useRouter()
@@ -31,15 +32,6 @@ function onDrop(files) {
     reader.onload = (e) => {
         const rawContent = e.target?.result
         localStorage.setItem('game', rawContent)
-
-        // try {
-        //     const jsonData = JSON.parse(rawContent)
-        //     fileContent.value = jsonData
-        //     console.log('Распарсенный JSON:', jsonData)
-        // } catch (error) {
-        //     console.error('Ошибка парсинга JSON:', error)
-        //     fileContent.value = { error: 'Неверный формат JSON' }
-        // }
     }
     reader.readAsText(files[0])
 }
