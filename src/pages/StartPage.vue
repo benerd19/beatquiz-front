@@ -16,11 +16,11 @@ const borderColors = reactive(['#A238FF', '#A2FB81', '#81E6FB', '#F11FB0', '#FFB
 const teams = reactive([
     {
         title: 'Team 1',
-        color: '#524e55',
+        color: '#A238FF',
     },
     {
         title: 'Team 2',
-        color: '#524e55',
+        color: '#A2FB81',
     },
 ])
 
@@ -61,7 +61,7 @@ function onDrop(files) {
 function addTeam() {
     teams.push({
         title: `Team ${teams.length + 1}`,
-        color: '#524e55',
+        color: borderColors[teams.length],
     })
 }
 

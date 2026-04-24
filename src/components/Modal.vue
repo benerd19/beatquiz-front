@@ -1,5 +1,8 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, defineModel, defineProps, watch } from 'vue'
+// import activeQuestionStore from '../stores/activeQuestionStore'
+
+// const { rowIndex, questionIndex, trackId } = activeQuestionStore()
 
 const audioRef = ref(null)
 const rangeRef = ref(null)
@@ -7,6 +10,10 @@ const isPlaying = ref(false)
 const currentTime = ref('0:00')
 const totalDuration = ref('0:00')
 const rangeValue = ref(0)
+
+const props = defineProps(['modalData'])
+
+const isOpen = defineModel(false)
 
 let durationSeconds = 0
 
@@ -72,6 +79,10 @@ const onEnded = () => {
     isPlaying.value = false
 }
 
+const closeModal = () => {
+    isOpen.value = false
+}
+
 onUnmounted(() => {
     if (audioRef.value) {
         audioRef.value.pause()
@@ -80,18 +91,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="modal__wrapper">
-        <img src="../assets/close.svg" alt="close" class="modal__close-icon" />
+    <div class="modal__wrapper" v-if="isOpen">
+        <img src="../assets/close.svg" alt="close" class="modal__close-icon" @click="closeModal" />
         <div class="modal__inner">
-            <img
-                src="https://cdn-images.dzcdn.net/images/cover/39fe38574c7af3181d1e56ad7c03fce3/500x500-000000-80-0-0.jpg"
-                alt="album-logo"
-                class="modal__album-img"
-            />
+            <img :src="props.modalData.image" alt="album-logo" class="modal__album-img" />
             <div class="modal__duration">
                 <audio
                     ref="audioRef"
-                    src="https://cdnt-preview.dzcdn.net/api/1/1/4/6/1/0/46137fd093d286cd97fd542a8654fb92.mp3?hdnea=exp=1776518478~acl=/api/1/1/4/6/1/0/46137fd093d286cd97fd542a8654fb92.mp3*~data=user_id=0,application_id=42~hmac=c11857308feb904f16e1b6513ed70a13417b93181d26d62a60644be3bdda2edb"
+                    :src="props.modalData.preview"
                     @timeupdate="updateProgress"
                     @loadedmetadata="onLoadedMetadata"
                     @ended="onEnded"
@@ -111,7 +118,7 @@ onUnmounted(() => {
                 <button class="modal__answer-btn modal__answer-btn--positive"><img src="../assets/check.svg" alt="positive" /></button>
             </div>
             <div class="modal__info">
-                <p class="modal__info-title">She will be loved</p>
+                <p class="modal__info-title">{{ props.modalData.title }}</p>
                 <p class="modal__info-artist">Maroon 5</p>
             </div>
         </div>
@@ -242,6 +249,7 @@ onUnmounted(() => {
         align-items: center;
         flex-wrap: wrap;
         margin-top: 32px;
+        text-align: center;
     }
 
     &__info-title {

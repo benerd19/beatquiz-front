@@ -1,19 +1,30 @@
 <script setup>
-import { reactive, onMounted } from 'vue'
+import { reactive, onMounted, ref } from 'vue'
 import Modal from '@/components/Modal.vue'
+import { useActiveQuestion } from '../stores/activeQuestionStore'
+import axios from 'axios'
 const teams = reactive([])
 const game = reactive([])
+const isOpen = ref(false)
+
+const { rowIndex, questionIndex, trackId } = useActiveQuestion()
+
+const modalProps = ref({ image: null, title: null, preview: null })
 
 onMounted(() => {
+    //Teams parser
     const storageTeams = localStorage.getItem('teams')
-    if (storageTeams) teams.push(...JSON.parse(storageTeams))
+    if (storageTeams) teams.push(...JSON.parse(storageTeams).map((team) => ({ ...team, score: 0 })))
 
     const storageGame = localStorage.getItem('game')
     const parsedRounds = JSON.parse(storageGame).rounds
 
-    console.log(parsedRounds)
-
-    game.push(...parsedRounds)
+    for (const round of parsedRounds) {
+        game.push({
+            title: round.title,
+            questions: round.questions.map((question) => ({ ...question, isAnswered: false })),
+        })
+    }
 })
 
 const backgroundColors = reactive([
@@ -50,38 +61,59 @@ const backgroundColors = reactive([
         round: '#2B273A',
     },
 ])
+
+async function rowItemClick(question, index) {
+    try {
+        const { data } = await axios.get(`https://beatquiz-back.vercel.app/song/${question.id}`)
+
+        modalProps.value = {
+            image: data.image,
+            title: data.title,
+            preview: data.preview,
+        }
+
+        isOpen.value = true
+    } catch (e) {
+        console.log(e)
+    }
+
+    // rowIndex.value = index
+    // questionIndex.value = question.index
+    // trackId.value = question.trackId
+    // isOpen.value = true
+    // console.log(question, index)
+}
 </script>
 <template>
     <div class="grid__inner">
-        <h1 class="grid__header">Name of the game</h1>
+        <div class="grid__header">
+            <img src="../assets/deezer-logo.svg" alt="logo" class="grid__logo" />
+            <h1 class="grid__header-title">Name of the game</h1>
+            <div class="grid__header-empty-block" />
+        </div>
         <div class="grid">
             <div class="grid__row" v-for="(round, index) in game" :key="index">
-                <div class="grid__category-title" :style="{ backgroundColor: backgroundColors[index].title }">
+                <div class="grid__category-title">
                     <h2>{{ round.title }}</h2>
                 </div>
                 <div class="grid__rounds">
-                    <div
-                        class="grid__round"
-                        v-for="(question, idx) in round.questions"
-                        :key="idx"
-                        :style="{ backgroundColor: backgroundColors[index].round }"
-                    >
+                    <div class="grid__round" v-for="(question, idx) in round.questions" :key="idx" @click="rowItemClick(question, index)">
                         {{ question.value }}
                     </div>
                 </div>
             </div>
         </div>
         <div class="grid__commands">
-            <div class="grid__command" v-for="(team, index) in teams" :key="index" :style="{ backgroundColor: team.color }">
+            <div class="grid__command" v-for="(team, index) in teams" :key="index" :style="{ borderColor: team.color }">
                 <h3 class="grid__command-title">{{ team.title }}</h3>
-                <span class="grid__command-points">500</span>
+                <span class="grid__command-points">{{ team.score }}</span>
             </div>
-            <div class="grid__logo-wrapper">
-                <img src="../assets/deezer-logo.svg" alt="logo" class="grid__logo" />
-            </div>
+            <!-- <div class="grid__logo-wrapper">
+                
+            </div> -->
         </div>
     </div>
-    <Modal />
+    <Modal v-model="isOpen" :modal-data="modalProps" />
 </template>
 <style scoped lang="scss">
 .grid {
@@ -97,12 +129,21 @@ const backgroundColors = reactive([
     }
 
     &__header {
+        display: flex;
         margin-top: 16px;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    &__header-title {
         text-align: center;
         font-size: 40px;
         font-weight: 600;
         color: #ffffff;
-        margin-bottom: 8px;
+    }
+
+    &__header-empty-block {
+        width: 100px;
     }
 
     &__row {
@@ -177,7 +218,7 @@ const backgroundColors = reactive([
     &__command {
         padding: 16px;
         width: 100%;
-        background-color: #2b1e27;
+        background-color: #212325;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -185,6 +226,7 @@ const backgroundColors = reactive([
         gap: 4px;
         border-radius: 20px;
         height: 90px;
+        border-top: 4px solid transparent;
     }
 
     &__command-title {
