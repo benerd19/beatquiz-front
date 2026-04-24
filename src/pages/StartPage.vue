@@ -11,7 +11,7 @@ const uploadStatus = ref(false)
 const dropZoneRef = useTemplateRef('dropZoneRef')
 const router = useRouter()
 
-const borderColors = reactive(['#A238FF', '#A2FB81', '#81E6FB', '#F11FB0', '#FFB260'])
+const borderColors = reactive(['#A238FF', '#1FF134', '#F1DF1F', '#F11FB0', '#81E6FB'])
 
 const teams = reactive([
     {
@@ -51,7 +51,17 @@ function onDrop(files) {
     const reader = new FileReader()
     reader.onload = (e) => {
         const rawContent = e.target?.result
-        localStorage.setItem('game', rawContent)
+        const gameTitle = JSON.parse(rawContent).title
+        const gameRounds = JSON.parse(rawContent).rounds
+        const game = []
+        for (const round of gameRounds) {
+            game.push({
+                title: round.title,
+                questions: round.questions.map((question) => ({ ...question, isAnswered: false })),
+            })
+        }
+        localStorage.setItem('game', JSON.stringify(game))
+        localStorage.setItem('gameTitle', gameTitle)
         isDragOver.value = false
         uploadStatus.value = true
     }
@@ -66,7 +76,8 @@ function addTeam() {
 }
 
 function startGame() {
-    localStorage.setItem('teams', JSON.stringify(teams))
+    const teamsForStorage = teams.map((team, index) => ({ ...team, score: 0 }))
+    localStorage.setItem('teams', JSON.stringify(teamsForStorage))
     router.push('/')
 }
 
@@ -99,7 +110,7 @@ function deleteTeam(index) {
                 <span> {{ uploadStatus ? 'Game uploaded' : 'Choose a file or Drag & drop files here' }} </span>
             </div>
 
-            <button class="start__start-btn" @click.prevent="startGame">Start</button>
+            <button class="start__start-btn" @click.prevent="startGame" :disabled="!uploadStatus">Start</button>
         </form>
     </div>
 </template>
@@ -221,6 +232,11 @@ function deleteTeam(index) {
         font-size: 16px;
         font-weight: 400;
         margin-top: 32px;
+
+        &:disabled {
+            background-color: #808080;
+            color: #626262;
+        }
     }
 }
 </style>

@@ -1,19 +1,32 @@
 <script setup>
-import { ref, onMounted, onUnmounted, defineModel, defineProps, watch } from 'vue'
+import { ref, onMounted, onUnmounted, defineModel, watch } from 'vue'
+import axios from 'axios'
+import { useGameStore } from '@/stores/gameStore'
 // import activeQuestionStore from '../stores/activeQuestionStore'
 
 // const { rowIndex, questionIndex, trackId } = activeQuestionStore()
 
+const { increaseScore, decreaseScore, disableQuestion } = useGameStore()
 const audioRef = ref(null)
 const rangeRef = ref(null)
 const isPlaying = ref(false)
 const currentTime = ref('0:00')
 const totalDuration = ref('0:00')
 const rangeValue = ref(0)
+const isLoading = ref(false)
+
+const trackInfo = ref({
+    image: '',
+    preview: '',
+    artist: '',
+    title: '',
+})
+
+const isAnswerShow = ref(false)
 
 const props = defineProps(['modalData'])
 
-const isOpen = defineModel(false)
+const isOpen = defineModel()
 
 let durationSeconds = 0
 
@@ -81,7 +94,41 @@ const onEnded = () => {
 
 const closeModal = () => {
     isOpen.value = false
+    isAnswerShow.value = false
 }
+
+const toggleWrongAnswer = () => {
+    decreaseScore(props.modalData.question.value)
+    disableQuestion(props.modalData.categoryIndex, props.modalData.questionIndex)
+    isOpen.value = false
+    isAnswerShow.value = false
+}
+
+const toggleRightAnswer = () => {
+    increaseScore(props.modalData.question.value)
+    disableQuestion(props.modalData.categoryIndex, props.modalData.questionIndex)
+    isOpen.value = false
+    isAnswerShow.value = false
+}
+
+watch(isOpen, async () => {
+    try {
+        console.log(props.modalData)
+        isLoading.value = true
+        const { data } = await axios.get(`https://beatquiz-back.vercel.app/song/${props.modalData.question.id}`)
+        console.log(data)
+        trackInfo.value = {
+            image: data.image,
+            preview: data.preview,
+            artist: data.artist,
+            title: data.title,
+        }
+    } catch (e) {
+        console.log(e)
+    } finally {
+        isLoading.value = false
+    }
+})
 
 onUnmounted(() => {
     if (audioRef.value) {
@@ -93,12 +140,22 @@ onUnmounted(() => {
 <template>
     <div class="modal__wrapper" v-if="isOpen">
         <img src="../assets/close.svg" alt="close" class="modal__close-icon" @click="closeModal" />
-        <div class="modal__inner">
-            <img :src="props.modalData.image" alt="album-logo" class="modal__album-img" />
+        <div class="spinner" v-show="isLoading"></div>
+        <div class="modal__inner" v-show="!isLoading">
+            <div class="modal__album-wrapper" :class="{ 'is-flipped': isAnswerShow }">
+                <div class="modal__album-inner">
+                    <div class="modal__album-front">
+                        <img src="../assets/image 1.png" alt="fallback" />
+                    </div>
+                    <div class="modal__album-back">
+                        <img :src="trackInfo.image" alt="album-logo" />
+                    </div>
+                </div>
+            </div>
             <div class="modal__duration">
                 <audio
                     ref="audioRef"
-                    :src="props.modalData.preview"
+                    :src="trackInfo.preview"
                     @timeupdate="updateProgress"
                     @loadedmetadata="onLoadedMetadata"
                     @ended="onEnded"
@@ -110,16 +167,21 @@ onUnmounted(() => {
                 </div>
             </div>
             <div class="modal__buttons">
-                <button class="modal__answer-btn modal__answer-btn--negative"><img src="../assets/close-svg.svg" alt="negative" /></button>
+                <button class="modal__answer-btn modal__answer-btn--negative" v-if="isAnswerShow" @click="toggleWrongAnswer">
+                    <img src="../assets/close-svg.svg" alt="negative" />
+                </button>
                 <button @click="togglePlay" class="modal__play-btn">
                     <img src="../assets/pause.svg" alt="pause" v-if="isPlaying" />
                     <img src="../assets/play_arrow.svg" alt="pause" v-else />
                 </button>
-                <button class="modal__answer-btn modal__answer-btn--positive"><img src="../assets/check.svg" alt="positive" /></button>
+                <button class="modal__answer-btn modal__answer-btn--positive" v-if="isAnswerShow" @click="toggleRightAnswer">
+                    <img src="../assets/check.svg" alt="positive" />
+                </button>
             </div>
             <div class="modal__info">
-                <p class="modal__info-title">{{ props.modalData.title }}</p>
-                <p class="modal__info-artist">Maroon 5</p>
+                <p class="modal__info-title" v-if="isAnswerShow">{{ trackInfo.title }}</p>
+                <p class="modal__info-artist" v-if="isAnswerShow">{{ trackInfo.artist }}</p>
+                <button @click="isAnswerShow = true" class="modal__show-answer-btn" v-if="!isAnswerShow">Show Answer</button>
             </div>
         </div>
     </div>
@@ -261,6 +323,84 @@ onUnmounted(() => {
     &__info-artist {
         color: rgb(255, 255, 255, 0.67);
         font-size: 20px;
+    }
+
+    &__album-wrapper {
+        width: 320px;
+        height: 320px;
+        perspective: 800px;
+        margin-top: -60px;
+    }
+
+    &__album-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.6s ease;
+        transform-style: preserve-3d;
+    }
+
+    &__show-answer-btn {
+        padding: 16px 32px;
+        color: #ffffffde;
+        background-color: #2e322e;
+        border-radius: 16px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 400;
+    }
+}
+
+.modal__album-wrapper.is-flipped .modal__album-inner {
+    transform: rotateY(180deg);
+}
+
+/* Общие стили для лицевой и обратной стороны */
+.modal__album-front,
+.modal__album-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden; /* скрываем оборотную сторону */
+    border-radius: 12px; /* по желанию */
+    overflow: hidden;
+}
+
+/* Задняя сторона изначально повёрнута */
+.modal__album-back {
+    transform: rotateY(180deg);
+}
+
+/* Картинки растягиваем по контейнеру */
+.modal__album-front img,
+.modal__album-back img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid #982ef5; /* цвет можно заменить на ваш акцентный */
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* центрируем */
+    z-index: 1;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
     }
 }
 </style>

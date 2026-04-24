@@ -1,30 +1,33 @@
 <script setup>
-import { reactive, onMounted, ref } from 'vue'
+import { reactive, onMounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import Modal from '@/components/Modal.vue'
 import { useActiveQuestion } from '../stores/activeQuestionStore'
-import axios from 'axios'
-const teams = reactive([])
+import { useGameStore } from '../stores/gameStore'
 const game = reactive([])
 const isOpen = ref(false)
+const gameTitle = ref('')
 
+const gameStore = useGameStore()
+const { activeTeam, teams, gameQuestions } = storeToRefs(gameStore)
 const { rowIndex, questionIndex, trackId } = useActiveQuestion()
 
-const modalProps = ref({ image: null, title: null, preview: null })
+const modalProps = ref({ question: null, index: null })
 
 onMounted(() => {
-    //Teams parser
-    const storageTeams = localStorage.getItem('teams')
-    if (storageTeams) teams.push(...JSON.parse(storageTeams).map((team) => ({ ...team, score: 0 })))
-
     const storageGame = localStorage.getItem('game')
-    const parsedRounds = JSON.parse(storageGame).rounds
+    const parsedRounds = JSON.parse(storageGame)
 
-    for (const round of parsedRounds) {
-        game.push({
-            title: round.title,
-            questions: round.questions.map((question) => ({ ...question, isAnswered: false })),
-        })
-    }
+    gameTitle.value = localStorage.getItem('gameTitle')
+
+    // for (const round of parsedRounds) {
+    //     game.push({
+    //         title: round.title,
+    //         questions: round.questions.map((question) => ({ ...question, isAnswered: false })),
+    //     })
+    // }
+    // console.log(gameQuestions.value)
+    gameQuestions.value.push(...parsedRounds)
 })
 
 const backgroundColors = reactive([
@@ -62,14 +65,38 @@ const backgroundColors = reactive([
     },
 ])
 
-async function rowItemClick(question, index) {
+const teamColors = reactive([
+    {
+        border: '#A238FF',
+        background: '#2B273ACC',
+    },
+    {
+        border: '#1FF134',
+        background: '#293A27CC',
+    },
+    {
+        border: '#F1DF1F',
+        background: '#3A3927CC',
+    },
+    {
+        border: '#F11FB0',
+        background: '#3A2734CC',
+    },
+    {
+        border: '#81E6FB',
+        background: '#27393ACC',
+    },
+])
+
+async function rowItemClick(question, index, idx) {
     try {
-        const { data } = await axios.get(`https://beatquiz-back.vercel.app/song/${question.id}`)
+        // const { data } = await axios.get(`https://beatquiz-back.vercel.app/song/${question.id}`)
+        // console.log(question, index)
 
         modalProps.value = {
-            image: data.image,
-            title: data.title,
-            preview: data.preview,
+            question: question,
+            categoryIndex: index,
+            questionIndex: idx,
         }
 
         isOpen.value = true
@@ -88,23 +115,33 @@ async function rowItemClick(question, index) {
     <div class="grid__inner">
         <div class="grid__header">
             <img src="../assets/deezer-logo.svg" alt="logo" class="grid__logo" />
-            <h1 class="grid__header-title">Name of the game</h1>
+            <h1 class="grid__header-title">{{ gameTitle }}</h1>
             <div class="grid__header-empty-block" />
         </div>
         <div class="grid">
-            <div class="grid__row" v-for="(round, index) in game" :key="index">
+            <div class="grid__row" v-for="(round, index) in gameQuestions" :key="index">
                 <div class="grid__category-title">
                     <h2>{{ round.title }}</h2>
                 </div>
                 <div class="grid__rounds">
-                    <div class="grid__round" v-for="(question, idx) in round.questions" :key="idx" @click="rowItemClick(question, index)">
+                    <div
+                        :class="['grid__round', { 'grid__round--disabled': question.isAnswered }]"
+                        v-for="(question, idx) in round.questions"
+                        :key="idx"
+                        @click="rowItemClick(question, index, idx)"
+                    >
                         {{ question.value }}
                     </div>
                 </div>
             </div>
         </div>
         <div class="grid__commands">
-            <div class="grid__command" v-for="(team, index) in teams" :key="index" :style="{ borderColor: team.color }">
+            <div
+                class="grid__command"
+                v-for="(team, index) in teams"
+                :key="index"
+                :style="{ borderColor: teamColors[index].border, backgroundColor: index === activeTeam ? teamColors[index].background : '' }"
+            >
                 <h3 class="grid__command-title">{{ team.title }}</h3>
                 <span class="grid__command-points">{{ team.score }}</span>
             </div>
@@ -188,18 +225,20 @@ async function rowItemClick(question, index) {
         align-items: center;
         border-radius: 20px;
         cursor: pointer;
-        transition: all 0.3s ease;
         user-select: none;
         height: calc((80dvh - 56px) / 8);
         font-family: 'Dela Gothic One';
+        transition: all 0.3s ease;
 
         &:hover {
-            border: 1px solid #ffffff;
+            border: 1px solid #a238ff;
+            background-color: #242125;
         }
 
-        &--disable {
+        &--disabled {
             opacity: 0.3;
             cursor: default;
+            pointer-events: none;
 
             &:hover {
                 border: transparent;
