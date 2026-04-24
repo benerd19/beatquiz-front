@@ -2,11 +2,13 @@
 import { reactive, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import Modal from '@/components/Modal.vue'
+import ResultModal from '@/components/ResultModal.vue'
 import { useActiveQuestion } from '../stores/activeQuestionStore'
 import { useGameStore } from '../stores/gameStore'
-const game = reactive([])
 const isOpen = ref(false)
 const gameTitle = ref('')
+const resultModal = ref([])
+const questionsLeft = ref(64)
 
 const gameStore = useGameStore()
 const { activeTeam, teams, gameQuestions } = storeToRefs(gameStore)
@@ -19,16 +21,17 @@ onMounted(() => {
     const parsedRounds = JSON.parse(storageGame)
 
     gameTitle.value = localStorage.getItem('gameTitle')
-
-    // for (const round of parsedRounds) {
-    //     game.push({
-    //         title: round.title,
-    //         questions: round.questions.map((question) => ({ ...question, isAnswered: false })),
-    //     })
-    // }
-    // console.log(gameQuestions.value)
     gameQuestions.value.push(...parsedRounds)
+    countQuestionsLeft()
 })
+
+const countQuestionsLeft = () => {
+    questionsLeft.value = 0
+    gameQuestions.value.forEach((round) => {
+        questionsLeft.value += round.questions.filter((question) => !question.isAnswered).length
+    })
+    console.log(questionsLeft.value)
+}
 
 const backgroundColors = reactive([
     {
@@ -65,6 +68,11 @@ const backgroundColors = reactive([
     },
 ])
 
+watch(isOpen, () => {
+    countQuestionsLeft()
+    resultModal.value = teams.value.map((team, index) => ({ ...team, score: team.score, color: teamColors[index].border }))
+})
+
 const teamColors = reactive([
     {
         border: '#A238FF',
@@ -90,9 +98,6 @@ const teamColors = reactive([
 
 async function rowItemClick(question, index, idx) {
     try {
-        // const { data } = await axios.get(`https://beatquiz-back.vercel.app/song/${question.id}`)
-        // console.log(question, index)
-
         modalProps.value = {
             question: question,
             categoryIndex: index,
@@ -103,12 +108,6 @@ async function rowItemClick(question, index, idx) {
     } catch (e) {
         console.log(e)
     }
-
-    // rowIndex.value = index
-    // questionIndex.value = question.index
-    // trackId.value = question.trackId
-    // isOpen.value = true
-    // console.log(question, index)
 }
 </script>
 <template>
@@ -118,7 +117,7 @@ async function rowItemClick(question, index, idx) {
             <h1 class="grid__header-title">{{ gameTitle }}</h1>
             <div class="grid__header-empty-block" />
         </div>
-        <div class="grid">
+        <div class="grid" v-if="questionsLeft > 0">
             <div class="grid__row" v-for="(round, index) in gameQuestions" :key="index">
                 <div class="grid__category-title">
                     <h2>{{ round.title }}</h2>
@@ -135,7 +134,7 @@ async function rowItemClick(question, index, idx) {
                 </div>
             </div>
         </div>
-        <div class="grid__commands">
+        <div class="grid__commands" v-if="questionsLeft > 0">
             <div
                 class="grid__command"
                 v-for="(team, index) in teams"
@@ -145,10 +144,8 @@ async function rowItemClick(question, index, idx) {
                 <h3 class="grid__command-title">{{ team.title }}</h3>
                 <span class="grid__command-points">{{ team.score }}</span>
             </div>
-            <!-- <div class="grid__logo-wrapper">
-                
-            </div> -->
         </div>
+        <ResultModal :teams="resultModal" v-if="questionsLeft === 0" />
     </div>
     <Modal v-model="isOpen" :modal-data="modalProps" />
 </template>
