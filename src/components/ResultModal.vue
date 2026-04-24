@@ -15,22 +15,6 @@ shownTeams.push(props.teams.sort((a, b) => b.score - a.score))
                     <span class="result__team-title">{{ team.title }}</span>
                     <span class="result__team-score">{{ team.score }}</span>
                 </div>
-                <!-- <div class="result__team">
-                    <span class="result__team-title">Team 4</span>
-                    <span class="result__team-score">30000</span>
-                </div>
-                <div class="result__team">
-                    <span class="result__team-title">Team 4</span>
-                    <span class="result__team-score">30000</span>
-                </div>
-                <div class="result__team">
-                    <span class="result__team-title">Team 4</span>
-                    <span class="result__team-score">30000</span>
-                </div>
-                <div class="result__team">
-                    <span class="result__team-title">Team 4</span>
-                    <span class="result__team-score">30000</span>
-                </div> -->
             </div>
         </div>
     </div>

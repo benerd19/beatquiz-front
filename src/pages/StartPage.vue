@@ -1,11 +1,10 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDropZone } from '@vueuse/core'
 import { useTemplateRef } from 'vue'
 import DeleteIcon from '@/components/Icons/DeleteIcon.vue'
 import PlusIcon from '@/components/Icons/PlusIcon.vue'
-import Modal from '@/components/Modal.vue'
 
 const uploadStatus = ref(false)
 const dropZoneRef = useTemplateRef('dropZoneRef')
@@ -84,6 +83,13 @@ function startGame() {
 function deleteTeam(index) {
     teams.splice(index, 1)
 }
+
+onMounted(() => {
+    localStorage.removeItem('teams')
+    localStorage.removeItem('game')
+    localStorage.removeItem('gameTitle')
+    localStorage.removeItem('activeTeam')
+})
 </script>
 <template>
     <div class="start__wrapper">

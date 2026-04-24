@@ -3,8 +3,8 @@ import { reactive, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import Modal from '@/components/Modal.vue'
 import ResultModal from '@/components/ResultModal.vue'
-import { useActiveQuestion } from '../stores/activeQuestionStore'
 import { useGameStore } from '../stores/gameStore'
+import { useRouter } from 'vue-router'
 const isOpen = ref(false)
 const gameTitle = ref('')
 const resultModal = ref([])
@@ -12,12 +12,15 @@ const questionsLeft = ref(64)
 
 const gameStore = useGameStore()
 const { activeTeam, teams, gameQuestions } = storeToRefs(gameStore)
-const { rowIndex, questionIndex, trackId } = useActiveQuestion()
-
+const router = useRouter()
 const modalProps = ref({ question: null, index: null })
 
 onMounted(() => {
     const storageGame = localStorage.getItem('game')
+    if (!storageGame) {
+        router.push('/start')
+        return
+    }
     const parsedRounds = JSON.parse(storageGame)
 
     gameTitle.value = localStorage.getItem('gameTitle')
