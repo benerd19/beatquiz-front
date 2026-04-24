@@ -34,5 +34,7 @@ export const useGameStore = defineStore('game', () => {
         localStorage.setItem('game', JSON.stringify(gameQuestions))
     }
 
-    return { activeTeam, numberOfTeams, teams, gameQuestions, changeActiveTeam, increaseScore, decreaseScore, disableQuestion }
+    const saveTeams = () => localStorage.setItem('teams', JSON.stringify(teams))
+
+    return { activeTeam, numberOfTeams, teams, gameQuestions, changeActiveTeam, increaseScore, decreaseScore, disableQuestion, saveTeams }
 })

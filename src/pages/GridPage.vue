@@ -9,9 +9,11 @@ const isOpen = ref(false)
 const gameTitle = ref('')
 const resultModal = ref([])
 const questionsLeft = ref(64)
+const isEditing = ref(false)
 
 const gameStore = useGameStore()
 const { activeTeam, teams, gameQuestions } = storeToRefs(gameStore)
+const { saveTeams } = gameStore
 const router = useRouter()
 const modalProps = ref({ question: null, index: null })
 
@@ -76,6 +78,10 @@ watch(isOpen, () => {
     resultModal.value = teams.value.map((team, index) => ({ ...team, score: team.score, color: teamColors[index].border }))
 })
 
+watch(isEditing, () => {
+    saveTeams()
+})
+
 const teamColors = reactive([
     {
         border: '#A238FF',
@@ -118,7 +124,7 @@ async function rowItemClick(question, index, idx) {
         <div class="grid__header">
             <img src="../assets/deezer-logo.svg" alt="logo" class="grid__logo" />
             <h1 class="grid__header-title">{{ gameTitle }}</h1>
-            <div class="grid__header-empty-block" />
+            <img src="../assets/editB.svg" alt="edit" class="grid__edit-icon" @click="isEditing = !isEditing" />
         </div>
         <div class="grid" v-if="questionsLeft > 0">
             <div class="grid__row" v-for="(round, index) in gameQuestions" :key="index">
@@ -145,7 +151,8 @@ async function rowItemClick(question, index, idx) {
                 :style="{ borderColor: teamColors[index].border, backgroundColor: index === activeTeam ? teamColors[index].background : '' }"
             >
                 <h3 class="grid__command-title">{{ team.title }}</h3>
-                <span class="grid__command-points">{{ team.score }}</span>
+                <input type="text" class="grid__command-input" v-model="team.score" v-if="isEditing" />
+                <span class="grid__command-points" v-else>{{ team.score }}</span>
             </div>
         </div>
         <ResultModal :teams="resultModal" v-if="questionsLeft === 0" />
@@ -287,6 +294,16 @@ async function rowItemClick(question, index, idx) {
         align-items: center;
         background-color: #212325;
         border-radius: 20px;
+    }
+
+    &__edit-icon {
+        cursor: pointer;
+    }
+
+    &__command-input {
+        font-size: 24px;
+        font-family: 'Dela Gothic One';
+        color: rgba(255, 255, 255, 0.87);
     }
 }
 </style>
