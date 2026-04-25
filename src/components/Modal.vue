@@ -95,6 +95,8 @@ const onEnded = () => {
 const closeModal = () => {
     isOpen.value = false
     isAnswerShow.value = false
+    isPlaying.value = false
+    audioRef.value.pause()
 }
 
 const toggleWrongAnswer = () => {
@@ -102,6 +104,8 @@ const toggleWrongAnswer = () => {
     disableQuestion(props.modalData.categoryIndex, props.modalData.questionIndex)
     isOpen.value = false
     isAnswerShow.value = false
+    isPlaying.value = false
+    audioRef.value.pause()
 }
 
 const toggleRightAnswer = () => {
@@ -109,6 +113,8 @@ const toggleRightAnswer = () => {
     disableQuestion(props.modalData.categoryIndex, props.modalData.questionIndex)
     isOpen.value = false
     isAnswerShow.value = false
+    isPlaying.value = false
+    audioRef.value.pause()
 }
 
 watch(isOpen, async () => {
