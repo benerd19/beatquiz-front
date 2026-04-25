@@ -124,7 +124,9 @@ async function rowItemClick(question, index, idx) {
         <div class="grid__header">
             <img src="../assets/deezer-logo.svg" alt="logo" class="grid__logo" />
             <h1 class="grid__header-title">{{ gameTitle }}</h1>
-            <img src="../assets/editB.svg" alt="edit" class="grid__edit-icon" @click="isEditing = !isEditing" />
+            <div class="grid__header-right">
+                <img src="../assets/editB.svg" alt="edit" class="grid__edit-icon" @click="isEditing = !isEditing" />
+            </div>
         </div>
         <div class="grid" v-if="questionsLeft > 0">
             <div class="grid__row" v-for="(round, index) in gameQuestions" :key="index">
@@ -304,6 +306,13 @@ async function rowItemClick(question, index, idx) {
         font-size: 24px;
         font-family: 'Dela Gothic One';
         color: rgba(255, 255, 255, 0.87);
+    }
+
+    &__header-right {
+        width: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 }
 </style>
