@@ -1,18 +1,34 @@
-<script setup>
-import { reactive, ref, onMounted } from 'vue'
+<script setup lang="ts">
+interface ITeams {
+    title: string
+    color: string
+}
+
+import { reactive, ref, onMounted, useTemplateRef } from 'vue'
+import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
-import { useDropZone } from '@vueuse/core'
-import { useTemplateRef } from 'vue'
-import DeleteIcon from '@/components/Icons/DeleteIcon.vue'
-import PlusIcon from '@/components/Icons/PlusIcon.vue'
+import { useDropZone, useFileDialog } from '@vueuse/core'
+
+import { useTeamStore, useGameStore } from '../stores'
+
+const teamStore = useTeamStore()
+const gameStore = useGameStore()
+
+const { initializeCategories, dropCategories } = gameStore
+const { initializeTeams, dropTeams } = teamStore
+const fileName = ref<string>('')
+const { open: openFileDialog, onChange } = useFileDialog({
+    accept: '.json',
+    multiple: false,
+})
 
 const uploadStatus = ref(false)
 const dropZoneRef = useTemplateRef('dropZoneRef')
 const router = useRouter()
 
-const borderColors = reactive(['#A238FF', '#1FF134', '#F1DF1F', '#F11FB0', '#81E6FB'])
+const teamColors = reactive<string[]>(['#A238FF', '#1FF134', '#F1DF1F', '#F11FB0', '#81E6FB'])
 
-const teams = reactive([
+const teams = reactive(<ITeams[]>[
     {
         title: 'Team 1',
         color: '#A238FF',
@@ -23,11 +39,22 @@ const teams = reactive([
     },
 ])
 
+function addTeam() {
+    const teamLength = teams.length
+    teams.push({
+        title: `Team ${teamLength + 1}`,
+        color: teamColors[teamLength],
+    })
+}
+
+function deleteTeam(index: number) {
+    teams.splice(index, 1)
+}
+
 const isDragOver = ref(false)
 
 useDropZone(dropZoneRef, {
     onDrop,
-
     onEnter: () => {
         isDragOver.value = true
     },
@@ -36,59 +63,53 @@ useDropZone(dropZoneRef, {
         isDragOver.value = false
     },
 
-    onOver: (e) => {
-        e.preventDefault()
-    },
-
     dataTypes: ['application/json'],
     multiple: false,
     preventDefaultForUnhandled: false,
 })
 
-function onDrop(files) {
-    console.log(files)
+function onDrop(files: null | File[]) {
+    if (!files || files.length === 0) return
+    fileName.value = files[0].name
     const reader = new FileReader()
     reader.onload = (e) => {
-        const rawContent = e.target?.result
+        const rawContent = e.target?.result as string
         const gameTitle = JSON.parse(rawContent).title
-        const gameRounds = JSON.parse(rawContent).rounds
-        const game = []
-        for (const round of gameRounds) {
-            game.push({
-                title: round.title,
-                questions: round.questions.map((question) => ({ ...question, isAnswered: false })),
-            })
-        }
-        localStorage.setItem('game', JSON.stringify(game))
         localStorage.setItem('gameTitle', gameTitle)
+        const gameCategories = JSON.parse(rawContent).categories
+        initializeCategories(gameCategories)
         isDragOver.value = false
         uploadStatus.value = true
     }
     reader.readAsText(files[0])
 }
 
-function addTeam() {
-    teams.push({
-        title: `Team ${teams.length + 1}`,
-        color: borderColors[teams.length],
-    })
-}
+onChange((file) => {
+    if (!file || file.length === 0) return
+    fileName.value = file[0].name
+    const reader = new FileReader()
+    reader.onload = (e) => {
+        const rawContent = e.target?.result as string
+        const gameTitle = JSON.parse(rawContent).title
+        localStorage.setItem('gameTitle', gameTitle)
+        const gameCategories = JSON.parse(rawContent).categories
+        initializeCategories(gameCategories)
+        isDragOver.value = false
+        uploadStatus.value = true
+    }
+    reader.readAsText(file[0])
+})
 
 function startGame() {
-    const teamsForStorage = teams.map((team, index) => ({ ...team, score: 0 }))
-    localStorage.setItem('teams', JSON.stringify(teamsForStorage))
-    router.push('/')
-}
-
-function deleteTeam(index) {
-    teams.splice(index, 1)
+    console.log(teams)
+    initializeTeams(teams)
+    router.replace('/')
 }
 
 onMounted(() => {
-    localStorage.removeItem('teams')
-    localStorage.removeItem('game')
+    dropTeams()
+    dropCategories()
     localStorage.removeItem('gameTitle')
-    localStorage.removeItem('activeTeam')
 })
 </script>
 <template>
@@ -99,21 +120,34 @@ onMounted(() => {
                 <h2 class="start__teams-title">Teams</h2>
 
                 <div class="start__add-team">
-                    <div class="start__inp-wrapper" v-for="(team, index) in teams" :key="index" :style="{ borderColor: borderColors[index] }">
+                    <div class="start__inp-wrapper" v-for="(team, index) in teams" :key="index" :style="{ borderColor: teamColors[index] }">
                         <input type="text" placeholder="Team name" class="start__inp" v-model="team.title" />
                         <div v-if="index > 1" @click="deleteTeam(index)" class="start__delete-icon-wrapper">
-                            <DeleteIcon class="start__delete-icon" />
+                            <Icon icon="material-symbols-light:delete-outline" class="start__delete-icon" />
                         </div>
                     </div>
                 </div>
                 <button class="start__add-team-btn" @click.prevent="addTeam" v-if="teams.length < 5">
-                    <PlusIcon />
+                    <Icon icon="material-symbols:add-2" />
                     Add Team
                 </button>
             </div>
 
-            <div ref="dropZoneRef" :class="['start__drop-zone', isDragOver ? 'start__drop-zone--active' : '']">
-                <span> {{ uploadStatus ? 'Game uploaded' : 'Choose a file or Drag & drop files here' }} </span>
+            <div ref="dropZoneRef" :class="['start__drop-zone', isDragOver ? 'start__drop-zone--active' : '']" v-if="!uploadStatus">
+                <button class="start__upload-btn" @click.prevent="() => openFileDialog()">
+                    <Icon icon="material-symbols-light:download-rounded" class="start__upload-icon" />
+                    Upload
+                </button>
+                <p class="start__upload-text">Choose a fail or Drag & drop files here</p>
+            </div>
+            <div class="start__uploaded-file" v-else>
+                <Icon icon="material-symbols-light:docs-outline-rounded" />
+                <p class="start__uploaded-file-name">{{ fileName }}</p>
+                <Icon
+                    icon="material-symbols-light:delete-outline"
+                    class="start__delete-icon start__delete-icon--uploaded"
+                    @click="uploadStatus = false"
+                />
             </div>
 
             <button class="start__start-btn" @click.prevent="startGame" :disabled="!uploadStatus">Start</button>
@@ -136,6 +170,7 @@ onMounted(() => {
         width: 100%;
         background-color: #000400;
         border-bottom: 3px solid #ffffff;
+        min-height: 880px;
     }
 
     &__title {
@@ -157,6 +192,7 @@ onMounted(() => {
         flex-direction: column;
         align-items: center;
         margin-bottom: 24px;
+        min-height: 503px;
     }
 
     &__teams-title {
@@ -188,17 +224,19 @@ onMounted(() => {
 
     &__drop-zone {
         width: 100%;
-        min-height: 100px;
+        min-height: 160px;
         background-color: #151719;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
+        gap: 16px;
         font-size: 16px;
         font-weight: 600;
         color: #ffffffa3;
         border: 1px dashed #ffffff33;
         border-radius: 16px;
-        margin-bottom: 12px;
+        margin: 24px 0 12px;
 
         &--active {
             border-color: #a238ff;
@@ -227,6 +265,26 @@ onMounted(() => {
         padding: 4px;
         flex-shrink: 0;
         cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        transition: all 0.3s ease-in-out;
+
+        &:hover {
+            background-color: #2e322e;
+        }
+
+        & svg {
+            color: #fff;
+            width: 24px;
+            height: 24px;
+        }
+    }
+
+    &__delete-icon {
+        &--uploaded {
+            cursor: pointer;
+        }
     }
 
     &__start-btn {
@@ -243,6 +301,54 @@ onMounted(() => {
             background-color: #808080;
             color: #626262;
         }
+    }
+
+    &__upload-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 24px;
+        background-color: #2e322e;
+        border-radius: 16px;
+    }
+
+    &__upload-icon {
+        color: #fff;
+        width: 24px;
+        height: 24px;
+    }
+
+    &__upload-text {
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 24px;
+        color: #ffffffa3;
+    }
+
+    &__uploaded-file {
+        width: 100%;
+        padding: 16px;
+        border: 1px solid #2e322e;
+        border-radius: 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+
+        & svg {
+            color: #fff;
+            width: 24px;
+            height: 24px;
+        }
+    }
+
+    &__uploaded-file-name {
+        width: 100%;
+        text-align: left;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 18px;
+        color: #ffffffde;
     }
 }
 </style>

@@ -18,16 +18,15 @@ const router = useRouter()
 const modalProps = ref({ question: null, index: null })
 
 onMounted(() => {
-    const storageGame = localStorage.getItem('game')
-    if (!storageGame) {
-        router.push('/start')
-        return
-    }
-    const parsedRounds = JSON.parse(storageGame)
-
-    gameTitle.value = localStorage.getItem('gameTitle')
-    gameQuestions.value.push(...parsedRounds)
-    countQuestionsLeft()
+    // const storageGame = localStorage.getItem('game')
+    // if (!storageGame) {
+    //     router.push('/start')
+    //     return
+    // }
+    // const parsedRounds = JSON.parse(storageGame)
+    // gameTitle.value = localStorage.getItem('gameTitle')
+    // gameQuestions.value.push(...parsedRounds)
+    // countQuestionsLeft()
 })
 
 const countQuestionsLeft = () => {
