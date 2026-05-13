@@ -3,17 +3,23 @@ import { reactive, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import Modal from '@/components/Modal.vue'
 import ResultModal from '@/components/ResultModal.vue'
-import { useGameStore } from '../stores/gameStore'
 import { useRouter } from 'vue-router'
+import { useTeamStore, useGameStore } from '../stores'
+
+const teamStore = useTeamStore()
+const gameStore = useGameStore()
+
+const { teams, activeTeam } = storeToRefs(teamStore)
+const { gameQuestions } = storeToRefs(gameStore)
+
 const isOpen = ref(false)
 const gameTitle = ref('')
 const resultModal = ref([])
 const questionsLeft = ref(64)
 const isEditing = ref(false)
 
-const gameStore = useGameStore()
-const { activeTeam, teams, gameQuestions } = storeToRefs(gameStore)
-const { saveTeams } = gameStore
+// const { activeTeam, teams, gameQuestions } = storeToRefs(gameStore)
+// const { saveTeams } = gameStore
 const router = useRouter()
 const modalProps = ref({ question: null, index: null })
 
@@ -27,15 +33,16 @@ onMounted(() => {
     // gameTitle.value = localStorage.getItem('gameTitle')
     // gameQuestions.value.push(...parsedRounds)
     // countQuestionsLeft()
+    // console.log(gameQuestions.value)
 })
 
-const countQuestionsLeft = () => {
-    questionsLeft.value = 0
-    gameQuestions.value.forEach((round) => {
-        questionsLeft.value += round.questions.filter((question) => !question.isAnswered).length
-    })
-    console.log(questionsLeft.value)
-}
+// const countQuestionsLeft = () => {
+//     questionsLeft.value = 0
+//     gameQuestions.value.forEach((round) => {
+//         questionsLeft.value += round.questions.filter((question) => !question.isAnswered).length
+//     })
+//     console.log(questionsLeft.value)
+// }
 
 const backgroundColors = reactive([
     {
@@ -197,7 +204,7 @@ async function rowItemClick(question, index, idx) {
     }
 
     &__category-title {
-        max-width: 240px;
+        max-width: 320px;
         width: 100%;
         font-size: 24px;
         color: #ffffff;
@@ -221,7 +228,6 @@ async function rowItemClick(question, index, idx) {
     }
 
     &__round {
-        max-width: 142px;
         width: 100%;
         background-color: #2c2e30;
         border: 1px solid transparent;

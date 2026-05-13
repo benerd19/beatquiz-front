@@ -1,12 +1,12 @@
 <script setup>
 import { ref, onMounted, onUnmounted, defineModel, watch } from 'vue'
 import axios from 'axios'
-import { useGameStore } from '@/stores/gameStore'
+import { useGameStore } from '../stores'
 // import activeQuestionStore from '../stores/activeQuestionStore'
 
 // const { rowIndex, questionIndex, trackId } = activeQuestionStore()
 
-const { increaseScore, decreaseScore, disableQuestion } = useGameStore()
+const { increaseScore, decreaseScore } = useGameStore()
 const audioRef = ref(null)
 const rangeRef = ref(null)
 const isPlaying = ref(false)

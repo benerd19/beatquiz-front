@@ -1,38 +1,38 @@
 import { defineStore } from 'pinia'
 import { reactive } from 'vue'
-
+import { ELocalStorage } from '../@types'
+import { useTeamStore } from '../stores'
 interface IQuestion {
     id: number
     value: number
-    isAnswered: boolean
+    isAnswered?: boolean
 }
 
 type TInitialQuestions = Omit<IQuestion, 'isAnswered'>
 
 interface ICategories {
     title: string
-    questions: IQuestion[] | TInitialQuestions[]
+    questions: IQuestion[]
 }
 
 export const useGameStore = defineStore('game', () => {
-    const gameQuestions = reactive<ICategories[]>([JSON.parse(localStorage.getItem('categories') || '[]')])
+    const { changeTeamScore, changeActiveTeam } = useTeamStore()
+    const gameQuestions = reactive<ICategories[]>(JSON.parse(localStorage.getItem(ELocalStorage.CATEGORIES) || '[]'))
 
-    // const increaseScore = (score) => {
-    //     teams[activeTeam.value].score += score
-    //     localStorage.setItem('teams', JSON.stringify(teams))
-    //     changeActiveTeam()
-    // }
+    const increaseScore = (score: number) => {
+        changeTeamScore(score)
+        changeActiveTeam()
+    }
 
-    // const decreaseScore = (score) => {
-    //     teams[activeTeam.value].score -= score
-    //     localStorage.setItem('teams', JSON.stringify(teams))
-    //     changeActiveTeam()
-    // }
+    const decreaseScore = (score: number) => {
+        changeTeamScore(-score)
+        changeActiveTeam()
+    }
 
-    // const disableQuestion = (categoryIndex, questionIndex) => {
-    //     gameQuestions[categoryIndex].questions[questionIndex].isAnswered = true
-    //     localStorage.setItem('game', JSON.stringify(gameQuestions))
-    // }
+    const disableQuestion = (categoryIndex: number, questionIndex: number) => {
+        gameQuestions[categoryIndex].questions[questionIndex].isAnswered = true
+        localStorage.setItem(ELocalStorage.CATEGORIES, JSON.stringify(gameQuestions))
+    }
 
     const initializeCategories = (initCategories: ICategories[]) => {
         const formattedCategories = []
@@ -43,13 +43,13 @@ export const useGameStore = defineStore('game', () => {
             })
         }
         gameQuestions.push(...formattedCategories)
-        localStorage.setItem('categories', JSON.stringify(gameQuestions))
+        localStorage.setItem(ELocalStorage.CATEGORIES, JSON.stringify(gameQuestions))
     }
 
     const dropCategories = () => {
         gameQuestions.splice(0, gameQuestions.length)
-        localStorage.removeItem('categories')
+        localStorage.removeItem(ELocalStorage.CATEGORIES)
     }
 
-    return { gameQuestions, initializeCategories, dropCategories }
+    return { gameQuestions, initializeCategories, dropCategories, increaseScore, decreaseScore, disableQuestion }
 })
