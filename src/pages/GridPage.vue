@@ -172,7 +172,8 @@ async function rowItemClick(question, index, idx) {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 80dvh;
+    height: 85dvh;
+    padding: 12px 0;
 
     &__inner {
         padding: 0 16px;
@@ -182,9 +183,9 @@ async function rowItemClick(question, index, idx) {
 
     &__header {
         display: flex;
-        margin-top: 16px;
         justify-content: space-between;
-        margin-bottom: 8px;
+        height: 5dvh;
+        padding-top: 16px;
     }
 
     &__header-title {
@@ -201,6 +202,7 @@ async function rowItemClick(question, index, idx) {
     &__row {
         display: flex;
         gap: 4px;
+        flex-grow: 1;
     }
 
     &__category-title {
@@ -218,7 +220,8 @@ async function rowItemClick(question, index, idx) {
         flex-wrap: wrap;
         text-align: center;
         user-select: none;
-        height: calc((80dvh - 56px) / 8);
+        // height: calc((80dvh - 56px) / 8);
+        height: auto;
     }
 
     &__rounds {
@@ -240,7 +243,6 @@ async function rowItemClick(question, index, idx) {
         border-radius: 20px;
         cursor: pointer;
         user-select: none;
-        height: calc((80dvh - 56px) / 8);
         font-family: 'Dela Gothic One';
         transition: all 0.3s ease;
 
@@ -265,7 +267,7 @@ async function rowItemClick(question, index, idx) {
         flex-direction: row;
         gap: 4px;
         width: 100%;
-        margin-top: 24px;
+        height: 10dvh;
     }
 
     &__command {
