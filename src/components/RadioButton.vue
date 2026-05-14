@@ -1,10 +1,11 @@
-<script setup>
-const props = defineProps(['name', 'value', 'id'])
+<script setup lang="ts">
+const props = defineProps(['name', 'value', 'id', 'label', 'disabled'])
+const model = defineModel()
 </script>
 <template>
     <div class="input__wrapper">
-        <input type="radio" :id="props.id" :name="name" :value="value" class="input" />
-        <label :for="props.id" class="input__label">{{ value }}</label>
+        <input type="radio" :id="props.id" :name="props.name" :value="props.value" class="input" v-model="model" :disabled="props.disabled" />
+        <label :for="props.id" class="input__label">{{ props.label }}</label>
     </div>
 </template>
 <style scoped lang="scss">
