@@ -144,7 +144,7 @@ watch(isOpen, async () => {
             preview: data.preview,
             artist: data.artist,
             title: data.title,
-            album: data.album,
+            album: 'from ' + data.album,
             artistPhoto: data.artistPhoto,
         }
     } catch (e) {

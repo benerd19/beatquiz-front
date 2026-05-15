@@ -23,6 +23,11 @@ export const useTeamStore = defineStore('team', () => {
         localStorage.setItem(ELocalStorage.TEAMS, JSON.stringify(teams))
     }
 
+    const editTeamScore = (score: string, teamIndex: number = activeTeam.value) => {
+        teams[teamIndex].score = Number(score)
+        localStorage.setItem(ELocalStorage.TEAMS, JSON.stringify(teams))
+    }
+
     const dropTeams = () => {
         teams.splice(0, teams.length)
         activeTeam.value = 0
@@ -35,5 +40,5 @@ export const useTeamStore = defineStore('team', () => {
         localStorage.setItem(ELocalStorage.ACTIVE_TEAM, String(index))
     }
 
-    return { activeTeam, teams, initializeTeams, dropTeams, changeTeamScore, changeActiveTeam }
+    return { activeTeam, teams, initializeTeams, dropTeams, changeTeamScore, changeActiveTeam, editTeamScore }
 })

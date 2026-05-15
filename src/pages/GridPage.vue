@@ -14,11 +14,14 @@ const gameStore = useGameStore()
 const { teams, activeTeam } = storeToRefs(teamStore)
 const { gameQuestions } = storeToRefs(gameStore)
 
+const { editTeamScore } = teamStore
 const isOpen = ref(false)
 const gameTitle = ref('')
 const resultModal = ref([])
 const questionsLeft = ref(64)
 const isEditing = ref(false)
+const editIndex = ref(null)
+const buffer = ref(0)
 
 const router = useRouter()
 const modalProps = ref({ question: null, index: null })
@@ -46,10 +49,6 @@ watch(isOpen, () => {
     resultModal.value = teams.value.map((team, index) => ({ ...team, score: team.score, color: teamColors[index].border }))
 })
 
-watch(isEditing, () => {
-    saveTeams()
-})
-
 const teamColors = reactive([
     {
         border: '#A238FF',
@@ -72,6 +71,21 @@ const teamColors = reactive([
         background: '#0D9EA6',
     },
 ])
+
+function editTeam(index) {
+    isEditing.value = !isEditing.value
+    editIndex.value = index
+    buffer.value = teams.value[index].score
+}
+
+function closeEditing() {
+    editIndex.value = null
+}
+
+function saveTeamScore() {
+    editTeamScore(buffer.value, editIndex.value)
+    closeEditing()
+}
 
 async function rowItemClick(question, index, idx) {
     modalProps.value = {
@@ -116,11 +130,27 @@ async function rowItemClick(question, index, idx) {
                 class="grid__command"
                 v-for="(team, index) in teams"
                 :key="index"
-                :style="{ borderColor: teamColors[index].border, backgroundColor: index === activeTeam ? teamColors[index].background : '' }"
+                :style="{
+                    borderColor: teamColors[index].border,
+                    backgroundColor: index === activeTeam && editIndex !== index ? teamColors[index].background : '',
+                }"
             >
-                <h3 class="grid__command-title">{{ team.title }}</h3>
-                <input type="text" class="grid__command-input" v-model="team.score" v-if="isEditing" />
-                <span class="grid__command-points" v-else>{{ team.score }}</span>
+                <div class="grid__team-info">
+                    <h3 class="grid__command-title" v-if="editIndex !== index">{{ team.title }}</h3>
+                    <input type="text" class="grid__command-input" v-model="buffer" v-if="editIndex === index" />
+                    <span class="grid__command-points" v-else>{{ team.score }}</span>
+                </div>
+                <button class="grid__edit-btn" :style="{ borderColor: teamColors[index].border }" @click="editTeam(index)" v-if="editIndex !== index">
+                    <Icon icon="material-symbols-light:edit" />
+                </button>
+                <div v-else class="grid__command-save-edit">
+                    <button class="grid__command-save-button" :style="{ borderColor: teamColors[index].border }" @click="saveTeamScore">
+                        <Icon icon="material-symbols-light:check" />
+                    </button>
+                    <button class="grid__command-save-button" :style="{ borderColor: teamColors[index].border }" @click="closeEditing">
+                        <Icon icon="material-symbols-light:close" />
+                    </button>
+                </div>
             </div>
         </div>
         <ResultModal :teams="resultModal" v-if="questionsLeft === 0" />
@@ -236,11 +266,18 @@ async function rowItemClick(question, index, idx) {
         display: flex;
         justify-content: center;
         align-items: center;
-        flex-direction: column;
         gap: 4px;
         border-radius: 20px;
         height: 90px;
         border-top: 4px solid transparent;
+        display: flex;
+        justify-content: space-between;
+
+        &:hover {
+            .grid__edit-btn {
+                display: flex;
+            }
+        }
     }
 
     &__command-title {
@@ -284,6 +321,34 @@ async function rowItemClick(question, index, idx) {
         color: #fff;
         display: flex;
         align-items: center;
+    }
+
+    &__team-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__edit-btn,
+    &__command-save-button {
+        padding: 4px;
+        color: #fff;
+        background-color: #212325;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        font-size: 24px;
+        border-radius: 8px;
+        border-width: 1px;
+        border-style: solid;
+    }
+
+    &__command-save-button {
+        display: flex;
+    }
+
+    &__command-save-edit {
+        display: flex;
+        gap: 8px;
     }
 }
 </style>
