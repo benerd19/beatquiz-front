@@ -18,8 +18,8 @@ export const useTeamStore = defineStore('team', () => {
         localStorage.setItem(ELocalStorage.TEAMS, JSON.stringify(teams))
     }
 
-    const changeTeamScore = (score: number) => {
-        teams[activeTeam.value].score += score
+    const changeTeamScore = (score: number, teamIndex: number = activeTeam.value) => {
+        teams[teamIndex].score += score
         localStorage.setItem(ELocalStorage.TEAMS, JSON.stringify(teams))
     }
 
@@ -30,9 +30,9 @@ export const useTeamStore = defineStore('team', () => {
         localStorage.removeItem(ELocalStorage.TEAMS)
     }
 
-    const changeActiveTeam = () => {
-        activeTeam.value = activeTeam.value === teams.length - 1 ? 0 : activeTeam.value + 1
-        localStorage.setItem(ELocalStorage.ACTIVE_TEAM, activeTeam.value.toString())
+    const changeActiveTeam = (index: number) => {
+        activeTeam.value = index
+        localStorage.setItem(ELocalStorage.ACTIVE_TEAM, String(index))
     }
 
     return { activeTeam, teams, initializeTeams, dropTeams, changeTeamScore, changeActiveTeam }

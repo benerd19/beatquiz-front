@@ -21,12 +21,10 @@ export const useGameStore = defineStore('game', () => {
 
     const increaseScore = (score: number) => {
         changeTeamScore(score)
-        changeActiveTeam()
     }
 
     const decreaseScore = (score: number) => {
         changeTeamScore(-score)
-        changeActiveTeam()
     }
 
     const disableQuestion = (categoryIndex: number, questionIndex: number) => {

@@ -21,6 +21,11 @@ const routes = [
         name: 'NewStart',
         component: () => import('@/pages/NewStartPage.vue'),
     },
+    {
+        path: '/question',
+        name: 'Question',
+        component: () => import('@/pages/QuestionPage.vue'),
+    },
 ]
 
 const router = createRouter({

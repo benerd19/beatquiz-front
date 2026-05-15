@@ -80,7 +80,7 @@ const backgroundColors = reactive([
 ])
 
 watch(isOpen, () => {
-    countQuestionsLeft()
+    // countQuestionsLeft()
     resultModal.value = teams.value.map((team, index) => ({ ...team, score: team.score, color: teamColors[index].border }))
 })
 
@@ -112,17 +112,13 @@ const teamColors = reactive([
 ])
 
 async function rowItemClick(question, index, idx) {
-    try {
-        modalProps.value = {
-            question: question,
-            categoryIndex: index,
-            questionIndex: idx,
-        }
-
-        isOpen.value = true
-    } catch (e) {
-        console.log(e)
+    modalProps.value = {
+        question: question,
+        categoryIndex: index,
+        questionIndex: idx,
     }
+
+    isOpen.value = true
 }
 </script>
 <template>
@@ -220,7 +216,6 @@ async function rowItemClick(question, index, idx) {
         flex-wrap: wrap;
         text-align: center;
         user-select: none;
-        // height: calc((80dvh - 56px) / 8);
         height: auto;
     }
 

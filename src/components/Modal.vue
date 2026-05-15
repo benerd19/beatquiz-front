@@ -1,25 +1,37 @@
-<script setup>
-import { ref, onMounted, onUnmounted, defineModel, watch } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { toRefs } from 'vue'
 import axios from 'axios'
-import { useGameStore } from '../stores'
+import { Icon } from '@iconify/vue'
 // import activeQuestionStore from '../stores/activeQuestionStore'
+import { useTeamStore, useGameStore } from '../stores'
 
 // const { rowIndex, questionIndex, trackId } = activeQuestionStore()
 
-const { increaseScore, decreaseScore } = useGameStore()
-const audioRef = ref(null)
-const rangeRef = ref(null)
+const gameStore = useGameStore()
+const teamsStore = useTeamStore()
+
+const { disableQuestion } = gameStore
+const { teams, changeTeamScore, changeActiveTeam } = teamsStore
+
+const audioRef = ref()
+const rangeRef = ref()
 const isPlaying = ref(false)
 const currentTime = ref('0:00')
 const totalDuration = ref('0:00')
 const rangeValue = ref(0)
 const isLoading = ref(false)
+const gettingPoints = ref()
+const isAnswerCorrect = ref(false)
+const isAnswered = ref(false)
 
 const trackInfo = ref({
     image: '',
     preview: '',
     artist: '',
     title: '',
+    album: '',
+    artistPhoto: '',
 })
 
 const isAnswerShow = ref(false)
@@ -65,7 +77,7 @@ const onLoadedMetadata = () => {
     totalDuration.value = formatTime(durationSeconds)
 }
 
-const seek = (e) => {
+const seek = (e: any) => {
     const audio = audioRef.value
     if (!audio || !durationSeconds) return
 
@@ -81,7 +93,7 @@ const seek = (e) => {
 }
 
 // Форматирование времени (секунды -> mm:ss)
-const formatTime = (seconds) => {
+const formatTime = (seconds: number) => {
     if (isNaN(seconds)) return '0:00'
     const mins = Math.floor(seconds / 60)
     const secs = Math.floor(seconds % 60)
@@ -97,24 +109,28 @@ const closeModal = () => {
     isAnswerShow.value = false
     isPlaying.value = false
     audioRef.value.pause()
+    gettingPoints.value = 0
+    isAnswerCorrect.value = false
+    isAnswered.value = false
 }
 
-const toggleWrongAnswer = () => {
-    decreaseScore(props.modalData.question.value)
+const showInfo = () => {
+    isAnswerShow.value = true
     disableQuestion(props.modalData.categoryIndex, props.modalData.questionIndex)
-    isOpen.value = false
-    isAnswerShow.value = false
-    isPlaying.value = false
-    audioRef.value.pause()
 }
 
-const toggleRightAnswer = () => {
-    increaseScore(props.modalData.question.value)
-    disableQuestion(props.modalData.categoryIndex, props.modalData.questionIndex)
-    isOpen.value = false
-    isAnswerShow.value = false
-    isPlaying.value = false
-    audioRef.value.pause()
+const changeBackground = (points: number) => {
+    gettingPoints.value = points
+    isAnswerCorrect.value = points < 0 ? false : true
+    isAnswered.value = true
+}
+
+const changeScore = (index: number) => {
+    changeTeamScore(gettingPoints.value, index)
+    if (gettingPoints.value > 0) {
+        changeActiveTeam(index)
+    }
+    closeModal()
 }
 
 watch(isOpen, async () => {
@@ -128,6 +144,8 @@ watch(isOpen, async () => {
             preview: data.preview,
             artist: data.artist,
             title: data.title,
+            album: data.album,
+            artistPhoto: data.artistPhoto,
         }
     } catch (e) {
         console.log(e)
@@ -147,47 +165,77 @@ onUnmounted(() => {
     <div class="modal__wrapper" v-if="isOpen">
         <img src="../assets/close.svg" alt="close" class="modal__close-icon" @click="closeModal" />
         <div class="spinner" v-show="isLoading"></div>
-        <div class="modal__inner" v-show="!isLoading">
-            <div class="modal__album-wrapper" :class="{ 'is-flipped': isAnswerShow }">
-                <div class="modal__album-inner">
-                    <div class="modal__album-front">
-                        <img src="../assets/image 1.png" alt="fallback" />
+        <div :class="['modal__container', { 'modal__container--flipped': isAnswered }]">
+            <div class="modal__inner" v-show="!isLoading">
+                <div class="modal__album-wrapper" :class="{ 'is-flipped': isAnswerShow }">
+                    <div class="modal__album-inner">
+                        <div class="modal__album-front">
+                            <img src="../assets/image 1.png" alt="fallback" />
+                        </div>
+                        <div class="modal__album-back">
+                            <img :src="trackInfo.image" alt="album-logo" />
+                        </div>
                     </div>
-                    <div class="modal__album-back">
-                        <img :src="trackInfo.image" alt="album-logo" />
+                </div>
+                <div class="modal__player-container">
+                    <button @click="togglePlay" class="modal__play-btn">
+                        <Icon icon="material-symbols:play-arrow" v-if="!isPlaying" class="modal__play-icon" />
+                        <Icon icon="material-symbols:pause" v-else class="modal__play-icon" />
+                    </button>
+                    <div class="modal__duration">
+                        <audio
+                            ref="audioRef"
+                            :src="trackInfo.preview"
+                            @timeupdate="updateProgress"
+                            @loadedmetadata="onLoadedMetadata"
+                            @ended="onEnded"
+                        />
+                        <input ref="rangeRef" type="range" class="modal__range" v-model="rangeValue" @input="seek" />
+                        <div class="modal__duration-timer">
+                            <span>{{ currentTime }}</span>
+                            <span>{{ totalDuration }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal__info" v-show="isAnswerShow">
+                    <p class="modal__info-title">{{ trackInfo.title }}</p>
+                    <p class="modal__info-album">{{ trackInfo.album }}</p>
+                    <div class="modal__info-artist-wrapper">
+                        <img :src="trackInfo.artistPhoto" alt="artist-logo" class="modal__info-artist-logo" />
+                        <p class="modal__info-artist-name">{{ trackInfo.artist }}</p>
+                    </div>
+                </div>
+                <button @click="showInfo" class="modal__show-answer-btn" v-if="!isAnswerShow">Show Answer</button>
+                <div class="modal__points-wrapper" v-show="isAnswerShow">
+                    <p class="modal__points-title">Points</p>
+                    <div class="modal__points-buttons">
+                        <button class="modal__points-button modal__points-button--mistake" @click="changeBackground(-props.modalData.question.value)">
+                            {{ -props.modalData.question.value }}
+                        </button>
+                        <button class="modal__points-button" @click="changeBackground(props.modalData.question.value)">
+                            {{ props.modalData.question.value }}
+                        </button>
+                        <button
+                            class="modal__points-button modal__points-button--double"
+                            @click="changeBackground(props.modalData.question.value * 2)"
+                        >
+                            {{ props.modalData.question.value * 2 }}
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="modal__duration">
-                <audio
-                    ref="audioRef"
-                    :src="trackInfo.preview"
-                    @timeupdate="updateProgress"
-                    @loadedmetadata="onLoadedMetadata"
-                    @ended="onEnded"
-                ></audio>
-                <input ref="rangeRef" type="range" class="modal__range" v-model="rangeValue" @input="seek" />
-                <div class="modal__duration-timer">
-                    <span>{{ currentTime }}</span>
-                    <span>{{ totalDuration }}</span>
+            <div :class="['modal__answer-back', isAnswerCorrect ? 'modal__answer-back--correct' : 'modal__answer-back--wrong']">
+                <div class="modal__answer-teams-wrapper">
+                    <p class="modal__answer-teams-title">Select the team to award points to</p>
+                    <div class="modal__answer-teams">
+                        <button class="modal__answer-teams-btn" v-for="(team, index) in teams" :key="index" @click="changeScore(index)">
+                            {{ team.title }}
+                        </button>
+                    </div>
                 </div>
-            </div>
-            <div class="modal__buttons">
-                <button class="modal__answer-btn modal__answer-btn--negative" v-if="isAnswerShow" @click="toggleWrongAnswer">
-                    <img src="../assets/close-svg.svg" alt="negative" />
-                </button>
-                <button @click="togglePlay" class="modal__play-btn">
-                    <img src="../assets/pause.svg" alt="pause" v-if="isPlaying" />
-                    <img src="../assets/play_arrow.svg" alt="pause" v-else />
-                </button>
-                <button class="modal__answer-btn modal__answer-btn--positive" v-if="isAnswerShow" @click="toggleRightAnswer">
-                    <img src="../assets/check.svg" alt="positive" />
-                </button>
-            </div>
-            <div class="modal__info">
-                <p class="modal__info-title" v-if="isAnswerShow">{{ trackInfo.title }}</p>
-                <p class="modal__info-artist" v-if="isAnswerShow">{{ trackInfo.artist }}</p>
-                <button @click="isAnswerShow = true" class="modal__show-answer-btn" v-if="!isAnswerShow">Show Answer</button>
+                <div class="modal__answer-points-wrapper">
+                    <span class="modal__answer-points">{{ isAnswerCorrect ? '+' : '' }}{{ gettingPoints }}</span>
+                </div>
             </div>
         </div>
     </div>
@@ -223,6 +271,23 @@ onUnmounted(() => {
         align-items: center;
         padding: 0 24px;
         min-height: 800px;
+        position: absolute;
+        top: -390px;
+        backface-visibility: hidden;
+    }
+
+    &__container {
+        max-width: 480px;
+        width: 100%;
+        transform-style: preserve-3d;
+        transition: transform 0.6s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        &--flipped {
+            transform: rotateY(180deg);
+        }
     }
 
     &__album-img {
@@ -233,7 +298,6 @@ onUnmounted(() => {
     }
 
     &__range {
-        margin-top: 72px;
         cursor: pointer;
 
         --progress-percent: 0%;
@@ -283,13 +347,12 @@ onUnmounted(() => {
     }
 
     &__play-btn {
-        width: 96px;
-        height: 96px;
         display: flex;
         justify-content: center;
         align-items: center;
-        border-radius: 100px;
+        border-radius: 8px;
         background-color: #2e322e;
+        padding: 8px;
     }
 
     &__answer-btn {
@@ -313,11 +376,13 @@ onUnmounted(() => {
     &__info {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 16px;
         align-items: center;
         flex-wrap: wrap;
         margin-top: 32px;
         text-align: center;
+        width: 100%;
+        max-width: 384px;
     }
 
     &__info-title {
@@ -357,6 +422,160 @@ onUnmounted(() => {
         cursor: pointer;
         font-size: 14px;
         font-weight: 400;
+        margin-top: 80px;
+    }
+
+    &__answer-back {
+        max-width: 480px;
+        width: 100%;
+        border-radius: 48px;
+        background-color: #000400;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 24px;
+        min-height: 800px;
+        position: absolute;
+        top: -390px;
+        backface-visibility: hidden;
+        transform: rotateY(180deg);
+
+        &--wrong {
+            box-shadow: inset 2px 4px 100px 80px#361111;
+        }
+
+        &--correct {
+            box-shadow: inset 2px 4px 100px 80px#163611;
+        }
+    }
+
+    &__player-container {
+        display: flex;
+        width: 100%;
+        margin-top: 72px;
+        align-items: center;
+        gap: 24px;
+    }
+
+    &__play-icon {
+        font-size: 36px;
+        color: #fff;
+    }
+
+    &__info-album {
+        padding: 8px 16px;
+        background-color: #212325;
+        color: #ffffffa3;
+        border-radius: 16px;
+        width: 100%;
+    }
+
+    &__info-artist-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        align-items: center;
+    }
+
+    &__info-artist-logo {
+        max-width: 56px;
+        aspect-ratio: 1 / 1;
+        border-radius: 100px;
+    }
+    &__info-artist-name {
+        color: #ffffffa3;
+        font-weight: 400;
+        font-size: 16px;
+    }
+
+    &__points-wrapper {
+        margin: 32px 0 12px;
+        padding: 24px 0 32px;
+        background-color: #212325;
+        border-radius: 24px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 22px;
+    }
+
+    &__points-title {
+        color: #ffffff;
+        font-weight: 500;
+        font-size: 20px;
+    }
+
+    &__points-buttons {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    &__points-button {
+        width: 100%;
+        max-width: 100px;
+        padding: 24px 0;
+        border-radius: 1000px;
+        color: #ffffff;
+        background-color: #2f5e28;
+        font-size: 24px;
+        font-weight: 700;
+
+        &--mistake {
+            background-color: #623334;
+        }
+
+        &--double {
+            background-color: #38a628;
+        }
+    }
+
+    &__answer-teams-wrapper {
+        margin-top: 60px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        align-items: center;
+    }
+
+    &__answer-teams-title {
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 24px;
+    }
+
+    &__answer-teams {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    &__answer-teams-btn {
+        padding: 16px;
+        background-color: #2e322e;
+        border-radius: 16px;
+        font-size: 16px;
+        color: #ffffffde;
+    }
+
+    &__answer-points-wrapper {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 120px;
+    }
+
+    &__answer-points {
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 72px;
     }
 }
 
