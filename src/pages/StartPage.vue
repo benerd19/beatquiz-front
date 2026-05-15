@@ -8,6 +8,7 @@ import { reactive, ref, onMounted, useTemplateRef } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { useDropZone, useFileDialog } from '@vueuse/core'
+import { ELocalStorage } from '../@types'
 
 import { useTeamStore, useGameStore } from '../stores'
 
@@ -75,7 +76,7 @@ function onDrop(files: null | File[]) {
     reader.onload = (e) => {
         const rawContent = e.target?.result as string
         const gameTitle = JSON.parse(rawContent).title
-        localStorage.setItem('gameTitle', gameTitle)
+        localStorage.setItem(ELocalStorage.GAME_TITLE, gameTitle)
         const gameCategories = JSON.parse(rawContent).categories
         initializeCategories(gameCategories)
         isDragOver.value = false
@@ -91,7 +92,7 @@ onChange((file) => {
     reader.onload = (e) => {
         const rawContent = e.target?.result as string
         const gameTitle = JSON.parse(rawContent).title
-        localStorage.setItem('gameTitle', gameTitle)
+        localStorage.setItem(ELocalStorage.GAME_TITLE, gameTitle)
         const gameCategories = JSON.parse(rawContent).categories
         initializeCategories(gameCategories)
         isDragOver.value = false
@@ -101,7 +102,7 @@ onChange((file) => {
 })
 
 function startGame() {
-    console.log(teams)
+    // console.log(teams)
     initializeTeams(teams)
     router.replace('/')
 }
@@ -109,48 +110,52 @@ function startGame() {
 onMounted(() => {
     dropTeams()
     dropCategories()
-    localStorage.removeItem('gameTitle')
+    localStorage.removeItem(ELocalStorage.GAME_TITLE)
 })
 </script>
 <template>
     <div class="start__wrapper">
         <form class="start__form">
             <h1 class="start__title">BeatQuiz</h1>
-            <div class="start__teams">
-                <h2 class="start__teams-title">Teams</h2>
+            <div class="start__main">
+                <div class="start__teams">
+                    <h2 class="start__teams-title">Teams</h2>
 
-                <div class="start__add-team">
-                    <div class="start__inp-wrapper" v-for="(team, index) in teams" :key="index" :style="{ borderColor: teamColors[index] }">
-                        <input type="text" placeholder="Team name" class="start__inp" v-model="team.title" />
-                        <div v-if="index > 1" @click="deleteTeam(index)" class="start__delete-icon-wrapper">
-                            <Icon icon="material-symbols-light:delete-outline" class="start__delete-icon" />
+                    <div class="start__add-team">
+                        <div class="start__inp-wrapper" v-for="(team, index) in teams" :key="index" :style="{ borderColor: teamColors[index] }">
+                            <input type="text" placeholder="Team name" class="start__inp" v-model="team.title" />
+                            <div v-if="index > 1" @click="deleteTeam(index)" class="start__delete-icon-wrapper">
+                                <Icon icon="material-symbols-light:delete-outline" class="start__delete-icon" />
+                            </div>
                         </div>
                     </div>
+                    <button class="start__add-team-btn" @click.prevent="addTeam" v-if="teams.length < 5">
+                        <Icon icon="material-symbols:add-2" />
+                        Add Team
+                    </button>
                 </div>
-                <button class="start__add-team-btn" @click.prevent="addTeam" v-if="teams.length < 5">
-                    <Icon icon="material-symbols:add-2" />
-                    Add Team
-                </button>
+
+                <div ref="dropZoneRef" :class="['start__drop-zone', isDragOver ? 'start__drop-zone--active' : '']" v-if="!uploadStatus">
+                    <button class="start__upload-btn" @click.prevent="() => openFileDialog()">
+                        <Icon icon="material-symbols-light:download-rounded" class="start__upload-icon" />
+                        Upload
+                    </button>
+                    <p class="start__upload-text">Choose a fail or Drag & drop files here</p>
+                </div>
+                <div class="start__uploaded-file" v-else>
+                    <Icon icon="material-symbols-light:docs-outline-rounded" />
+                    <p class="start__uploaded-file-name">{{ fileName }}</p>
+                    <Icon
+                        icon="material-symbols-light:delete-outline"
+                        class="start__delete-icon start__delete-icon--uploaded"
+                        @click="uploadStatus = false"
+                    />
+                </div>
             </div>
 
-            <div ref="dropZoneRef" :class="['start__drop-zone', isDragOver ? 'start__drop-zone--active' : '']" v-if="!uploadStatus">
-                <button class="start__upload-btn" @click.prevent="() => openFileDialog()">
-                    <Icon icon="material-symbols-light:download-rounded" class="start__upload-icon" />
-                    Upload
-                </button>
-                <p class="start__upload-text">Choose a fail or Drag & drop files here</p>
+            <div class="start__start-btn-wrapper">
+                <button class="start__start-btn" @click.prevent="startGame" :disabled="!uploadStatus">Start</button>
             </div>
-            <div class="start__uploaded-file" v-else>
-                <Icon icon="material-symbols-light:docs-outline-rounded" />
-                <p class="start__uploaded-file-name">{{ fileName }}</p>
-                <Icon
-                    icon="material-symbols-light:delete-outline"
-                    class="start__delete-icon start__delete-icon--uploaded"
-                    @click="uploadStatus = false"
-                />
-            </div>
-
-            <button class="start__start-btn" @click.prevent="startGame" :disabled="!uploadStatus">Start</button>
         </form>
     </div>
 </template>
@@ -171,6 +176,8 @@ onMounted(() => {
         background-color: #000400;
         border-bottom: 3px solid #ffffff;
         min-height: 880px;
+        display: flex;
+        flex-direction: column;
     }
 
     &__title {
@@ -349,6 +356,18 @@ onMounted(() => {
         font-size: 14px;
         line-height: 18px;
         color: #ffffffde;
+    }
+
+    &__start-btn-wrapper {
+        display: flex;
+        align-items: flex-end;
+    }
+
+    &__main {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
 }
 </style>

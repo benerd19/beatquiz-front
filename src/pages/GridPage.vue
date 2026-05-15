@@ -5,6 +5,8 @@ import Modal from '@/components/Modal.vue'
 import ResultModal from '@/components/ResultModal.vue'
 import { useRouter } from 'vue-router'
 import { useTeamStore, useGameStore } from '../stores'
+import { Icon } from '@iconify/vue'
+import { ELocalStorage } from '../@types'
 
 const teamStore = useTeamStore()
 const gameStore = useGameStore()
@@ -18,69 +20,29 @@ const resultModal = ref([])
 const questionsLeft = ref(64)
 const isEditing = ref(false)
 
-// const { activeTeam, teams, gameQuestions } = storeToRefs(gameStore)
-// const { saveTeams } = gameStore
 const router = useRouter()
 const modalProps = ref({ question: null, index: null })
 
 onMounted(() => {
-    // const storageGame = localStorage.getItem('game')
-    // if (!storageGame) {
-    //     router.push('/start')
-    //     return
-    // }
-    // const parsedRounds = JSON.parse(storageGame)
-    // gameTitle.value = localStorage.getItem('gameTitle')
-    // gameQuestions.value.push(...parsedRounds)
-    // countQuestionsLeft()
-    // console.log(gameQuestions.value)
+    const storageGame = localStorage.getItem(ELocalStorage.CATEGORIES)
+    if (!storageGame) {
+        router.push('/start')
+        return
+    }
+    gameTitle.value = localStorage.getItem(ELocalStorage.GAME_TITLE)
+    countQuestionsLeft()
 })
 
-// const countQuestionsLeft = () => {
-//     questionsLeft.value = 0
-//     gameQuestions.value.forEach((round) => {
-//         questionsLeft.value += round.questions.filter((question) => !question.isAnswered).length
-//     })
-//     console.log(questionsLeft.value)
-// }
-
-const backgroundColors = reactive([
-    {
-        title: '#5A5826',
-        round: '#3A3927',
-    },
-    {
-        title: '#2F5E28',
-        round: '#293A27',
-    },
-    {
-        title: '#603252',
-        round: '#3A2734',
-    },
-    {
-        title: '#2B6165',
-        round: '#27393A',
-    },
-    {
-        title: '#5A5826',
-        round: '#3A3927',
-    },
-    {
-        title: '#623334',
-        round: '#3A2727',
-    },
-    {
-        title: '#2F5E28',
-        round: '#293A27',
-    },
-    {
-        title: '#453876',
-        round: '#2B273A',
-    },
-])
+const countQuestionsLeft = () => {
+    questionsLeft.value = 0
+    gameQuestions.value.forEach((round) => {
+        questionsLeft.value += round.questions.filter((question) => !question.isAnswered).length
+    })
+    console.log(questionsLeft.value)
+}
 
 watch(isOpen, () => {
-    // countQuestionsLeft()
+    countQuestionsLeft()
     resultModal.value = teams.value.map((team, index) => ({ ...team, score: team.score, color: teamColors[index].border }))
 })
 
@@ -91,23 +53,23 @@ watch(isEditing, () => {
 const teamColors = reactive([
     {
         border: '#A238FF',
-        background: '#2B273ACC',
+        background: '#682F99',
     },
     {
         border: '#1FF134',
-        background: '#293A27CC',
+        background: '#19950B',
     },
     {
         border: '#F1DF1F',
-        background: '#3A3927CC',
+        background: '#888200',
     },
     {
         border: '#F11FB0',
-        background: '#3A2734CC',
+        background: '#860C60',
     },
     {
         border: '#81E6FB',
-        background: '#27393ACC',
+        background: '#0D9EA6',
     },
 ])
 
@@ -127,7 +89,9 @@ async function rowItemClick(question, index, idx) {
             <img src="../assets/deezer-logo.svg" alt="logo" class="grid__logo" />
             <h1 class="grid__header-title">{{ gameTitle }}</h1>
             <div class="grid__header-right">
-                <img src="../assets/editB.svg" alt="edit" class="grid__edit-icon" @click="isEditing = !isEditing" />
+                <button class="grid__exit-quiz" @click="router.push('/start')">
+                    <Icon icon="material-symbols:exit-to-app" />
+                </button>
             </div>
         </div>
         <div class="grid" v-if="questionsLeft > 0">
@@ -168,7 +132,7 @@ async function rowItemClick(question, index, idx) {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    height: 85dvh;
+    height: 80dvh;
     padding: 12px 0;
 
     &__inner {
@@ -180,7 +144,7 @@ async function rowItemClick(question, index, idx) {
     &__header {
         display: flex;
         justify-content: space-between;
-        height: 5dvh;
+        height: 10dvh;
         padding-top: 16px;
     }
 
@@ -290,14 +254,9 @@ async function rowItemClick(question, index, idx) {
         color: rgba(255, 255, 255, 0.87);
     }
 
-    &__logo-wrapper {
+    &__logo {
         width: 100%;
-        max-width: 132px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: #212325;
-        border-radius: 20px;
+        max-width: 100px;
     }
 
     &__edit-icon {
@@ -314,6 +273,16 @@ async function rowItemClick(question, index, idx) {
         width: 100px;
         display: flex;
         justify-content: center;
+        align-items: center;
+    }
+
+    &__exit-quiz {
+        padding: 16px;
+        border-radius: 16px;
+        background-color: #212325;
+        font-size: 24px;
+        color: #fff;
+        display: flex;
         align-items: center;
     }
 }
