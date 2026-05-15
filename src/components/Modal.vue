@@ -123,6 +123,8 @@ const changeBackground = (points: number) => {
     gettingPoints.value = points
     isAnswerCorrect.value = points < 0 ? false : true
     isAnswered.value = true
+    isPlaying.value = false
+    audioRef.value.pause()
 }
 
 const changeScore = (index: number) => {
