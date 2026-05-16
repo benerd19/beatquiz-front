@@ -72,6 +72,8 @@ const teamColors = reactive([
     },
 ])
 
+resultModal.value = teams.value.map((team, index) => ({ ...team, score: team.score, color: teamColors[index].border }))
+
 function editTeam(index) {
     isEditing.value = !isEditing.value
     editIndex.value = index
